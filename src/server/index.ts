@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 
-const PORT = +process.env.PORT || 3000;
+const PORT = +(process.env.PORT || 0) || 3000;
 
 const createServer = async () => {
   const app = express();
@@ -14,15 +14,11 @@ const createServer = async () => {
 
   app.use(vite.middlewares);
 
-  app.use('*', async (req, res, next) => {
-    try {
-      let html = readFileSync('index.html', 'utf-8');
-      html = await vite.transformIndexHtml(req.url, html);
+  app.use('*', async (req, res) => {
+    let html = readFileSync('index.html', 'utf-8');
+    html = await vite.transformIndexHtml(req.url, html);
 
-      res.set({ 'Content-Type': 'text/html' }).send(html);
-    } catch (error) {
-      return next(error);
-    }
+    res.set({ 'Content-Type': 'text/html' }).send(html);
   });
 
   app.listen(PORT, () => {
