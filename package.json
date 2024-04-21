@@ -6,17 +6,19 @@
   "scripts": {
     "dev": "nodemon --watch src/server --ext js,mjs,cjs,json,ts,tsx --exec npm run start:server",
     "start:server": "node --loader ts-node/esm src/server/index.ts",
-    "build": "run-p build:client:web build:client:ssr",
+    "build": "run-p build:client:web build:client:ssr build:server",
     "build:client:web": "vite build --outDir dist/client",
     "build:client:ssr": "vite build --outDir dist/server --ssr src/client/entry-server.tsx",
+    "build:server": "tsc --project tsconfig.server.json",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "sh  ./scripts/preview.sh"
   },
   "packageManager": "pnpm@8.15.7",
   "dependencies": {
     "express": "4.19.2",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "sirv": "2.0.4"
   },
   "devDependencies": {
     "@types/express": "4.17.21",
