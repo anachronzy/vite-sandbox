@@ -6,6 +6,6 @@ import './index.css';
 hydrateRoot(
   document.getElementById('root')!,
   <StrictMode>
-    <App />
+    <App value={window._ssr_props.context} />
   </StrictMode>,
 );

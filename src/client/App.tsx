@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0);
+interface AppProps {
+  value: number;
+}
+
+const App: FC<AppProps> = ({ value }) => {
+  const [name, setName] = useState('');
+
+  useEffect(() => {
+    fetch('/api/user')
+      .then((r) => r.json())
+      .then((data) => setName(data.name));
+  }, []);
 
   return (
     <>
@@ -16,20 +26,11 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <h1>Vite + React + Express + SSR</h1>
+      {Boolean(name) && <div>Hello {name}!</div>}
+      <div>Random number passed via ssr props: {value}</div>
     </>
   );
-}
+};
 
 export default App;

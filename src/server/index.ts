@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { createServer as createViteServer, type ViteDevServer } from 'vite';
+import { withApiRoutes } from './controllers/index.js';
 
 const BASE = process.env.BASE || '/';
 const PORT = +(process.env.PORT || 0) || 3000;
@@ -29,10 +30,12 @@ if (isProduction) {
   app.use(vite.middlewares);
 }
 
+withApiRoutes(app);
+
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl.replace(BASE, '');
   let template = '';
-  let render: (url: URL) => { html: string };
+  let render: (url: URL, opts: unknown) => { html: string; head: string };
 
   try {
     if (isProduction) {
@@ -45,9 +48,13 @@ app.use('*', async (req, res, next) => {
       render = (await vite.ssrLoadModule('src/client/entry-server.tsx')).render;
     }
 
-    const content = render(new URL(url, `https://${HOSTNAME}:${PORT}`));
+    const content = render(new URL(url, `https://${HOSTNAME}:${PORT}`), {
+      context: Math.floor(Math.random() * 100) + 1,
+    });
 
-    const html = template.replace('<!--app-html-->', content.html);
+    const html = template
+      .replace('<!--app-head-->', content.head)
+      .replace('<!--app-html-->', content.html);
 
     res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
   } catch (e) {
