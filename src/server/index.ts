@@ -7,7 +7,6 @@ import { withApiRoutes } from './controllers/index.js';
 
 const BASE = process.env.BASE || '/';
 const PORT = +(process.env.PORT || 0) || 3000;
-const HOSTNAME = process.env.HOST || 'localhost';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -32,38 +31,16 @@ if (isProduction) {
 
 withApiRoutes(app);
 
-app.use('*', async (req, res, next) => {
+app.use('*', async (req, res) => {
   const url = req.originalUrl.replace(BASE, '');
-  let template = '';
-  let render: (url: URL, opts: unknown) => { html: string; head: string };
+  let html = templateHtml;
 
-  try {
-    if (isProduction) {
-      template = templateHtml;
-      // @ts-expect-error TS2307
-      render = (await import('./server/entry-server.js')).render;
-    } else {
-      template = await readFile('index.html', 'utf-8');
-      template = await vite.transformIndexHtml(url, template);
-      render = (await vite.ssrLoadModule('src/client/entry-server.tsx')).render;
-    }
-
-    const content = render(new URL(url, `https://${HOSTNAME}:${PORT}`), {
-      context: Math.floor(Math.random() * 100) + 1,
-    });
-
-    const html = template
-      .replace('<!--app-head-->', content.head)
-      .replace('<!--app-html-->', content.html);
-
-    res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
-  } catch (e) {
-    if (e instanceof Error) {
-      vite?.ssrFixStacktrace(e);
-      console.error(e.stack);
-    }
-    next(e);
+  if (!isProduction) {
+    html = await readFile('index.html', 'utf-8');
+    html = await vite.transformIndexHtml(url, html);
   }
+
+  res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
 });
 
 app.listen(PORT, () => {
