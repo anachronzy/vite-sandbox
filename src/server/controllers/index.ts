@@ -1,4 +1,4 @@
-import { userRoute } from './user/index.js';
+import { userRoute } from './user';
 import { type Application } from 'express';
 
 export const withApiRoutes = (app: Application) => {

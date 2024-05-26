@@ -1,48 +1,51 @@
 import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import express from 'express';
-import { createServer as createViteServer, type ViteDevServer } from 'vite';
-import { withApiRoutes } from './controllers/index.js';
+import { withApiRoutes } from './controllers';
 
 const BASE = process.env.BASE || '/';
 const PORT = +(process.env.PORT || 0) || 3000;
 
 const isProduction = process.env.NODE_ENV === 'production';
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const templateHtml = isProduction
-  ? await readFile(join(__dirname, 'client', 'index.html'), 'utf-8')
-  : '';
+const createApp = async () => {
+  const templateHtml = isProduction
+    ? await readFile(join(__dirname, 'client', 'index.html'), 'utf-8')
+    : '';
 
-const app = express();
-let vite: ViteDevServer;
+  const app = express();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let server: any;
 
-if (isProduction) {
-  const sirv = (await import('sirv')).default;
-  app.use(BASE, sirv(join(__dirname, 'client'), { extensions: [] }));
-} else {
-  vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: 'custom',
-  });
-  app.use(vite.middlewares);
-}
-
-withApiRoutes(app);
-
-app.use('*', async (req, res) => {
-  const url = req.originalUrl.replace(BASE, '');
-  let html = templateHtml;
-
-  if (!isProduction) {
-    html = await readFile('index.html', 'utf-8');
-    html = await vite.transformIndexHtml(url, html);
+  if (isProduction) {
+    const sirv = (await import('sirv')).default;
+    app.use(BASE, sirv(join(__dirname, 'client'), { extensions: [] }));
+  } else {
+    const vite = await import('vite');
+    server = await vite.createServer({
+      server: { middlewareMode: true },
+      appType: 'custom',
+    });
+    app.use(server.middlewares);
   }
 
-  res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
-});
+  withApiRoutes(app);
 
-app.listen(PORT, () => {
-  console.log(`Server started at http://localhost:${PORT}`);
-});
+  app.use('*', async (req, res) => {
+    const url = req.originalUrl.replace(BASE, '');
+    let html = templateHtml;
+
+    if (!isProduction) {
+      html = await readFile('index.html', 'utf-8');
+      html = await server.transformIndexHtml(url, html);
+    }
+
+    res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
+  });
+
+  app.listen(PORT, () => {
+    console.log(`Server started at http://localhost:${PORT}`);
+  });
+};
+
+createApp().catch((err) => console.log(err));

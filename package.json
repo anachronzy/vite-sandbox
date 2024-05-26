@@ -2,18 +2,19 @@
   "name": "vite-sandbox",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "nodemon --watch src/server --ext js,mjs,cjs,json,ts,tsx --exec npm run start:server",
-    "start:server": "node --loader ts-node/esm src/server/index.ts",
-    "build": "run-p build:client build:server",
+    "start:server": "ts-node --project=tsconfig.server.json src/server/index.ts",
+    "build": "run-s build:client build:server",
     "build:client": "vite build --outDir dist/client",
-    "build:server": "tsc --project tsconfig.server.json",
+    "build:server": "esbuild src/server/index.ts --bundle --platform=node --external:vite --tsconfig=tsconfig.server.json --outdir=dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "sh  ./scripts/preview.sh"
+    "preview": "npm run build && node dist/index.js"
   },
   "packageManager": "pnpm@8.15.7",
   "dependencies": {
+    "esbuild": "0.21.4",
     "express": "4.19.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
